@@ -1,7 +1,7 @@
 task: detect
 mode: train
 model: yolo12l.pt
-data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+data: AerialDataset\data.yaml
 epochs: 100
 time: null
 patience: 20
@@ -91,7 +91,7 @@ nbs: 64
 hsv_h: 0.015
 hsv_s: 0.7
 hsv_v: 0.4
-degrees: 10.0
+degrees: 10
 translate: 0.1
 scale: 0.5
 shear: 2.0

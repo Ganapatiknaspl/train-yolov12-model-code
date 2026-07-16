@@ -1,4 +1,4 @@
-path: .
+path: AerialDataset
 
 train: train/images
 val: valid/images

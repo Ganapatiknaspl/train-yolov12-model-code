@@ -265,1918 +265,316 @@
 
 # print("=" * 70)
 
-# """
-# YOLO12L Training Pipeline
-
-# A complete production-level training pipeline that automatically:
-# - Clones the dataset repository if not present
-# - Updates the repository if already cloned
-# - Validates dataset structure
-# - Updates data.yaml with correct absolute paths
-# - Trains YOLO12L model with specified parameters
-# - Logs all operations and errors
-# """
-
-# import os
-# import sys
-# import shutil
-# import subprocess
-# import time
-# import yaml
-# import logging
-# from pathlib import Path
-# from datetime import datetime
-# from typing import Dict, Any, Optional, List, Tuple
-# from dataclasses import dataclass
-
-# from ultralytics import YOLO
-
-# # ==========================================================
-# # CONSTANTS
-# # ==========================================================
-
-# CONFIG_FILE = "config.yaml"
-# LOG_DIR = "logs"
-# LOG_FILE = os.path.join(LOG_DIR, "training.log")
-# LOG_FILE = os.path.join(LOG_DIR, "training_metrics.log")
-
-
-# # ==========================================================
-# # DEFAULT CONFIGURATION
-# # ==========================================================
-
-# DEFAULT_CONFIG = {
-#     "dataset": {
-#         "repository": "https://github.com/Ganapatiknaspl/train-yolo12l-model.git",
-#         "local_folder": "AerialDataset",
-#         "branch": "master"
-#     },
-#     "training": {
-#         "model": "yolo12l.pt",
-#         "project": "YOLO12_Training",
-#         "run_name": "Aircraft_v12l"
-#     },
-#     "status": {
-#         "cloned": False,
-#         "last_updated": None
-#     }
-# }
-
-# # ==========================================================
-# # LOGGING SETUP
-# # ==========================================================
-
-# def setup_logging() -> logging.Logger:
-#     """Configure logging system with both file and console handlers."""
-    
-#     # Create logs directory if it doesn't exist
-#     os.makedirs(LOG_DIR, exist_ok=True)
-    
-#     # Create logger
-#     logger = logging.getLogger("YOLOTraining")
-#     logger.setLevel(logging.DEBUG)
-    
-#     # Clear any existing handlers
-#     logger.handlers.clear()
-    
-#     # File handler
-#     file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
-#     file_handler.setLevel(logging.DEBUG)
-#     file_format = logging.Formatter(
-#         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-#         datefmt='%Y-%m-%d %H:%M:%S'
-#     )
-#     file_handler.setFormatter(file_format)
-    
-#     # Console handler
-#     console_handler = logging.StreamHandler(sys.stdout)
-#     console_handler.setLevel(logging.INFO)
-#     console_format = logging.Formatter('%(message)s')
-#     console_handler.setFormatter(console_format)
-    
-#     # Add handlers
-#     logger.addHandler(file_handler)
-#     logger.addHandler(console_handler)
-    
-#     return logger
-
-# # ==========================================================
-# # CONFIGURATION MANAGER
-# # ==========================================================
-
-# class ConfigurationManager:
-#     """
-#     Manages configuration loading, saving, and validation.
-#     """
-    
-#     def __init__(self, config_path: str = CONFIG_FILE, logger: Optional[logging.Logger] = None):
-#         """
-#         Initialize the ConfigurationManager.
-        
-#         Args:
-#             config_path: Path to the configuration file
-#             logger: Logger instance for logging operations
-#         """
-#         self.config_path = config_path
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-#         self.config: Dict[str, Any] = {}
-        
-#     def create_default_config(self) -> None:
-#         """Create default configuration file if it doesn't exist."""
-#         if not os.path.exists(self.config_path):
-#             self.logger.info(f"Creating default configuration: {self.config_path}")
-#             with open(self.config_path, 'w', encoding='utf-8') as f:
-#                 yaml.dump(DEFAULT_CONFIG, f, sort_keys=False, default_flow_style=False)
-    
-#     def load(self) -> Dict[str, Any]:
-#         """
-#         Load configuration from file.
-        
-#         Returns:
-#             Dict containing the configuration
-            
-#         Raises:
-#             yaml.YAMLError: If the configuration file is invalid
-#         """
-#         self.create_default_config()
-        
-#         try:
-#             with open(self.config_path, 'r', encoding='utf-8') as f:
-#                 self.config = yaml.safe_load(f)
-                
-#             if self.config is None:
-#                 self.config = DEFAULT_CONFIG.copy()
-#                 self.save()
-                
-#             self.logger.debug("Configuration loaded successfully")
-#             return self.config
-            
-#         except yaml.YAMLError as e:
-#             self.logger.error(f"Invalid YAML in config file: {e}")
-#             raise
-    
-#     def save(self) -> None:
-#         """Save current configuration to file."""
-#         try:
-#             with open(self.config_path, 'w', encoding='utf-8') as f:
-#                 yaml.dump(self.config, f, sort_keys=False, default_flow_style=False)
-#             self.logger.debug("Configuration saved successfully")
-#         except Exception as e:
-#             self.logger.error(f"Failed to save configuration: {e}")
-#             raise
-    
-#     def update_status(self, cloned: bool, last_updated: Optional[str] = None) -> None:
-#         """
-#         Update the status section of the configuration.
-        
-#         Args:
-#             cloned: Whether the repository has been cloned
-#             last_updated: Timestamp of last update
-#         """
-#         if "status" not in self.config:
-#             self.config["status"] = {}
-        
-#         self.config["status"]["cloned"] = cloned
-        
-#         if last_updated is None:
-#             last_updated = datetime.now().isoformat()
-#         self.config["status"]["last_updated"] = last_updated
-        
-#         self.save()
-    
-#     def get_dataset_config(self) -> Dict[str, str]:
-#         """Get dataset configuration section."""
-#         return self.config.get("dataset", {})
-    
-#     def get_training_config(self) -> Dict[str, str]:
-#         """Get training configuration section."""
-#         return self.config.get("training", {})
-
-# # ==========================================================
-# # GIT REPOSITORY MANAGER
-# # ==========================================================
-
-# class GitRepositoryManager:
-#     """
-#     Manages Git operations including clone, pull, and validation.
-#     """
-    
-#     def __init__(
-#         self,
-#         repo_url: str,
-#         local_folder: str,
-#         branch: str = "master",
-#         logger: Optional[logging.Logger] = None
-#     ):
-#         """
-#         Initialize the GitRepositoryManager.
-        
-#         Args:
-#             repo_url: Git repository URL
-#             local_folder: Local folder name for the repository
-#             branch: Branch to clone/pull
-#             logger: Logger instance for logging operations
-#         """
-#         self.repo_url = repo_url
-#         self.local_folder = local_folder
-#         self.branch = branch
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-    
-#     @staticmethod
-#     def verify_git_installed() -> None:
-#         """
-#         Verify that Git is installed on the system.
-        
-#         Raises:
-#             RuntimeError: If Git is not installed
-#         """
-#         if shutil.which("git") is None:
-#             raise RuntimeError(
-#                 "\n" + "=" * 70 + "\n"
-#                 "ERROR: Git is not installed on this system.\n"
-#                 "Please install Git from: https://git-scm.com/downloads\n"
-#                 "After installation, restart your terminal and try again.\n"
-#                 "=" * 70
-#             )
-    
-#     def is_repository_cloned(self) -> bool:
-#         """
-#         Check if the repository is already cloned.
-        
-#         Returns:
-#             True if the repository exists locally
-#         """
-#         return os.path.exists(self.local_folder) and os.path.isdir(self.local_folder)
-    
-#     def clone_repository(self) -> None:
-#         """
-#         Clone the repository from GitHub.
-        
-#         Raises:
-#             subprocess.CalledProcessError: If git clone fails
-#             RuntimeError: If cloning fails
-#         """
-#         self.logger.info(f"Cloning repository from: {self.repo_url}")
-#         self.logger.info(f"Destination: {self.local_folder}")
-        
-#         try:
-#             subprocess.run(
-#                 [
-#                     "git",
-#                     "clone",
-#                     "--depth",
-#                     "1",
-#                     "--branch",
-#                     self.branch,
-#                     self.repo_url,
-#                     self.local_folder
-#                 ],
-#                 check=True,
-#                 capture_output=True,
-#                 text=True
-#             )
-#             self.logger.info("Repository cloned successfully")
-            
-#         except subprocess.CalledProcessError as e:
-#             self.logger.error(f"Git clone failed: {e.stderr}")
-#             raise RuntimeError(f"Failed to clone repository: {e.stderr}")
-#         except Exception as e:
-#             self.logger.error(f"Unexpected error during clone: {e}")
-#             raise RuntimeError(f"Failed to clone repository: {e}")
-    
-#     def pull_repository(self) -> None:
-#         """
-#         Pull latest changes from the repository.
-        
-#         Raises:
-#             subprocess.CalledProcessError: If git pull fails
-#             RuntimeError: If pulling fails
-#         """
-#         self.logger.info(f"Pulling latest changes from: {self.repo_url}")
-        
-#         try:
-#             result = subprocess.run(
-#                 ["git", "-C", self.local_folder, "pull", "origin", self.branch],
-#                 check=True,
-#                 capture_output=True,
-#                 text=True
-#             )
-#             self.logger.info("Repository updated successfully")
-            
-#         except subprocess.CalledProcessError as e:
-#             self.logger.error(f"Git pull failed: {e.stderr}")
-#             raise RuntimeError(f"Failed to pull repository: {e.stderr}")
-#         except Exception as e:
-#             self.logger.error(f"Unexpected error during pull: {e}")
-#             raise RuntimeError(f"Failed to pull repository: {e}")
-    
-#     def ensure_repository(self) -> None:
-#         """
-#         Ensure the repository is available locally.
-#         Clones if not present, pulls if already exists.
-#         """
-#         self.verify_git_installed()
-        
-#         if self.is_repository_cloned():
-#             self.logger.info("Repository already exists locally")
-#             self.pull_repository()
-#         else:
-#             self.clone_repository()
-
-# # ==========================================================
-# # DATASET VALIDATOR
-# # ==========================================================
-
-# class DatasetValidator:
-#     """
-#     Validates the dataset structure and required files.
-#     """
-    
-#     REQUIRED_PATHS = [
-#         "train/images",
-#         "train/labels",
-#         "valid/images",
-#         "valid/labels",
-#         "test/images",
-#         "test/labels"
-#     ]
-    
-#     def __init__(self, dataset_path: str, logger: Optional[logging.Logger] = None):
-#         """
-#         Initialize the DatasetValidator.
-        
-#         Args:
-#             dataset_path: Path to the dataset directory
-#             logger: Logger instance for logging operations
-#         """
-#         self.dataset_path = Path(dataset_path)
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-    
-#     def validate_data_yaml(self) -> Path:
-#         """
-#         Locate and validate data.yaml file.
-        
-#         Returns:
-#             Path to the data.yaml file
-            
-#         Raises:
-#             FileNotFoundError: If data.yaml is not found
-#         """
-#         data_yaml_path = self.dataset_path / "data.yaml"
-        
-#         if not data_yaml_path.exists():
-#             raise FileNotFoundError(
-#                 f"data.yaml not found in: {self.dataset_path}\n"
-#                 f"Expected location: {data_yaml_path}"
-#             )
-        
-#         self.logger.info(f"data.yaml found at: {data_yaml_path}")
-#         return data_yaml_path
-    
-#     def validate_structure(self) -> None:
-#         """
-#         Validate the complete dataset structure.
-        
-#         Raises:
-#             FileNotFoundError: If any required directory is missing
-#         """
-#         self.logger.info("Validating dataset structure...")
-        
-#         missing_paths = []
-        
-#         for path in self.REQUIRED_PATHS:
-#             full_path = self.dataset_path / path
-#             if not full_path.exists():
-#                 missing_paths.append(str(path))
-        
-#         if missing_paths:
-#             error_msg = (
-#                 f"Dataset validation failed. Missing required directories:\n"
-#                 + "\n".join(f"  - {p}" for p in missing_paths)
-#                 + f"\n\nExpected structure in: {self.dataset_path}"
-#             )
-#             self.logger.error(error_msg)
-#             raise FileNotFoundError(error_msg)
-        
-#         self.logger.info("Dataset structure validated successfully")
-    
-#     def validate_dataset(self) -> Path:
-#         """
-#         Perform complete dataset validation.
-        
-#         Returns:
-#             Path to the validated data.yaml file
-#         """
-#         data_yaml_path = self.validate_data_yaml()
-#         self.validate_structure()
-#         return data_yaml_path
-
-# # ==========================================================
-# # DATASET MANAGER
-# # ==========================================================
-
-# class DatasetManager:
-#     """
-#     Manages dataset operations including cloning, validation, and configuration.
-#     """
-    
-#     def __init__(
-#         self,
-#         config_manager: ConfigurationManager,
-#         logger: Optional[logging.Logger] = None
-#     ):
-#         """
-#         Initialize the DatasetManager.
-        
-#         Args:
-#             config_manager: ConfigurationManager instance
-#             logger: Logger instance for logging operations
-#         """
-#         self.config_manager = config_manager
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-#         self.git_manager: Optional[GitRepositoryManager] = None
-#         self.validator: Optional[DatasetValidator] = None
-        
-#     def prepare_dataset(self) -> Path:
-#         """
-#         Prepare the dataset for training.
-        
-#         Returns:
-#             Path to the dataset directory
-            
-#         Raises:
-#             ValueError: If repository URL or local folder is not specified
-#             RuntimeError: If dataset preparation fails
-#         """
-#         dataset_config = self.config_manager.get_dataset_config()
-        
-#         repo_url = dataset_config.get("repository")
-#         local_folder = dataset_config.get("local_folder")
-#         branch = dataset_config.get("branch", "master")
-        
-#         if not repo_url or not local_folder:
-#             raise ValueError("Repository URL and local folder must be specified in config")
-        
-#         # Initialize Git manager
-#         self.git_manager = GitRepositoryManager(
-#             repo_url=repo_url,
-#             local_folder=local_folder,
-#             branch=branch,
-#             logger=self.logger
-#         )
-        
-#         # Ensure repository is available
-#         try:
-#             self.git_manager.ensure_repository()
-#         except Exception as e:
-#             self.logger.error(f"Failed to prepare dataset: {e}")
-#             raise RuntimeError(f"Dataset preparation failed: {e}")
-        
-#         # Update status in config
-#         self.config_manager.update_status(cloned=True)
-        
-#         # Get absolute path
-#         dataset_path = Path(os.path.abspath(local_folder))
-        
-#         # Initialize validator
-#         self.validator = DatasetValidator(
-#             dataset_path=str(dataset_path),
-#             logger=self.logger
-#         )
-        
-#         # Validate dataset
-#         try:
-#             data_yaml_path = self.validator.validate_dataset()
-#         except Exception as e:
-#             self.logger.error(f"Dataset validation failed: {e}")
-#             raise
-        
-#         # Update data.yaml with absolute path
-#         self._update_data_yaml_path(data_yaml_path, str(dataset_path))
-        
-#         return dataset_path
-    
-#     def _update_data_yaml_path(self, data_yaml_path: Path, absolute_path: str) -> None:
-#         """
-#         Update the path in data.yaml to the absolute local directory.
-        
-#         Args:
-#             data_yaml_path: Path to data.yaml
-#             absolute_path: Absolute path to the dataset directory
-            
-#         Raises:
-#             RuntimeError: If updating data.yaml fails
-#         """
-#         try:
-#             self.logger.info(f"Updating data.yaml with absolute path: {absolute_path}")
-            
-#             with open(data_yaml_path, 'r', encoding='utf-8') as f:
-#                 data_yaml = yaml.safe_load(f)
-            
-#             if data_yaml is None:
-#                 raise ValueError("data.yaml is empty or invalid")
-            
-#             # Update the path
-#             data_yaml['path'] = absolute_path
-            
-#             # Write back
-#             with open(data_yaml_path, 'w', encoding='utf-8') as f:
-#                 yaml.dump(data_yaml, f, sort_keys=False)
-            
-#             self.logger.info("data.yaml updated successfully")
-            
-#         except Exception as e:
-#             self.logger.error(f"Failed to update data.yaml: {e}")
-#             raise RuntimeError(f"Failed to update data.yaml: {e}")
-
-# # ==========================================================
-# # YOLO TRAINER
-# # ==========================================================
-
-# @dataclass
-# class TrainingParameters:
-#     """Training parameters for YOLO model."""
-    
-#     epochs: int = 100
-#     patience: int = 20
-#     imgsz: int = 1024
-#     batch: int = 16
-#     workers: int = 8
-    
-#     optimizer: str = "AdamW"
-#     lr0: float = 0.001
-#     lrf: float = 0.01
-#     momentum: float = 0.937
-#     weight_decay: float = 0.001
-    
-#     warmup_epochs: int = 3
-#     warmup_momentum: float = 0.8
-#     warmup_bias_lr: float = 0.1
-    
-#     hsv_h: float = 0.015
-#     hsv_s: float = 0.7
-#     hsv_v: float = 0.4
-#     degrees: float = 10.0
-#     translate: float = 0.10
-#     scale: float = 0.50
-#     shear: float = 2.0
-#     perspective: float = 0.0005
-#     flipud: float = 0.20
-#     fliplr: float = 0.50
-#     mosaic: float = 1.0
-#     mixup: float = 0.15
-#     copy_paste: float = 0.30
-#     close_mosaic: int = 15
-    
-#     box: float = 7.5
-#     cls: float = 1.5
-#     dfl: float = 1.5
-    
-#     dropout: float = 0.10
-#     label_smoothing: float = 0.05
-    
-#     amp: bool = True
-#     cache: bool = True
-#     deterministic: bool = True
-#     seed: int = 42
-    
-#     save: bool = True
-#     save_period: int = 10
-#     plots: bool = True
-#     exist_ok: bool = True
-
-
-# class YOLOTrainer:
-#     """
-#     Manages YOLO model training.
-#     """
-    
-#     def __init__(
-#         self,
-#         model_name: str,
-#         project_name: str,
-#         run_name: str,
-#         logger: Optional[logging.Logger] = None
-#     ):
-#         """
-#         Initialize the YOLOTrainer.
-        
-#         Args:
-#             model_name: Name of the YOLO model (e.g., 'yolo12l.pt')
-#             project_name: Project name for training outputs
-#             run_name: Run name for this training session
-#             logger: Logger instance for logging operations
-#         """
-#         self.model_name = model_name
-#         self.project_name = project_name
-#         self.run_name = run_name
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-#         self.model: Optional[YOLO] = None
-        
-#     def load_model(self) -> None:
-#         """Load the YOLO model."""
-#         self.logger.info(f"Loading model: {self.model_name}")
-#         try:
-#             self.model = YOLO(self.model_name)
-#             self.logger.info("Model loaded successfully")
-#         except Exception as e:
-#             self.logger.error(f"Failed to load model: {e}")
-#             raise RuntimeError(f"Failed to load model: {e}")
-    
-#     def train(
-#         self,
-#         data_yaml: str,
-#         params: Optional[TrainingParameters] = None
-#     ) -> Any:
-#         """
-#         Train the YOLO model.
-        
-#         Args:
-#             data_yaml: Path to data.yaml file
-#             params: Training parameters
-            
-#         Returns:
-#             Training results
-            
-#         Raises:
-#             RuntimeError: If training fails
-#             KeyboardInterrupt: If training is interrupted by user
-#         """
-#         if self.model is None:
-#             raise RuntimeError("Model not loaded. Call load_model() first.")
-        
-#         if params is None:
-#             params = TrainingParameters()
-        
-#         self.logger.info("Starting YOLO training...")
-#         self.logger.info(f"Data: {data_yaml}")
-#         self.logger.info(f"Epochs: {params.epochs}")
-#         self.logger.info(f"Batch size: {params.batch}")
-#         self.logger.info(f"Image size: {params.imgsz}")
-        
-#         try:
-#             results = self.model.train(
-#                 data=data_yaml,
-#                 epochs=params.epochs,
-#                 patience=params.patience,
-#                 imgsz=params.imgsz,
-#                 batch=params.batch,
-#                 workers=params.workers,
-#                 optimizer=params.optimizer,
-#                 lr0=params.lr0,
-#                 lrf=params.lrf,
-#                 momentum=params.momentum,
-#                 weight_decay=params.weight_decay,
-#                 warmup_epochs=params.warmup_epochs,
-#                 warmup_momentum=params.warmup_momentum,
-#                 warmup_bias_lr=params.warmup_bias_lr,
-#                 hsv_h=params.hsv_h,
-#                 hsv_s=params.hsv_s,
-#                 hsv_v=params.hsv_v,
-#                 degrees=params.degrees,
-#                 translate=params.translate,
-#                 scale=params.scale,
-#                 shear=params.shear,
-#                 perspective=params.perspective,
-#                 flipud=params.flipud,
-#                 fliplr=params.fliplr,
-#                 mosaic=params.mosaic,
-#                 mixup=params.mixup,
-#                 copy_paste=params.copy_paste,
-#                 close_mosaic=params.close_mosaic,
-#                 box=params.box,
-#                 cls=params.cls,
-#                 dfl=params.dfl,
-#                 dropout=params.dropout,
-#                 label_smoothing=params.label_smoothing,
-#                 amp=params.amp,
-#                 cache=params.cache,
-#                 deterministic=params.deterministic,
-#                 seed=params.seed,
-#                 save=params.save,
-#                 save_period=params.save_period,
-#                 plots=params.plots,
-#                 project=self.project_name,
-#                 name=self.run_name,
-#                 exist_ok=params.exist_ok
-#             )
-            
-#             self.logger.info("Training completed successfully")
-#             return results
-            
-#         except KeyboardInterrupt:
-#             self.logger.warning("Training interrupted by user")
-#             raise
-#         except Exception as e:
-#             self.logger.error(f"Error during training: {e}")
-#             raise RuntimeError(f"Training failed: {e}")
-
-# # ==========================================================
-# # TRAINING PIPELINE
-# # ==========================================================
-
-# class TrainingPipeline:
-#     """
-#     Orchestrates the complete training pipeline.
-#     """
-    
-#     def __init__(self, logger: Optional[logging.Logger] = None):
-#         """
-#         Initialize the TrainingPipeline.
-        
-#         Args:
-#             logger: Logger instance for logging operations
-#         """
-#         self.logger = logger or logging.getLogger("YOLOTraining")
-#         self.config_manager = ConfigurationManager(logger=self.logger)
-#         self.dataset_manager = DatasetManager(self.config_manager, logger=self.logger)
-#         self.trainer: Optional[YOLOTrainer] = None
-        
-#     def run(self) -> None:
-#         """
-#         Execute the complete training pipeline.
-#         """
-#         start_datetime = datetime.now()
-#         start_time = time.time()
-        
-#         try:
-#             self._print_header()
-            
-#             # Load configuration
-#             self.logger.info("Loading configuration...")
-#             config = self.config_manager.load()
-            
-#             # Prepare dataset
-#             self.logger.info("Preparing dataset...")
-#             dataset_path = self.dataset_manager.prepare_dataset()
-#             data_yaml = str(dataset_path / "data.yaml")
-            
-#             # Get training configuration
-#             training_config = self.config_manager.get_training_config()
-#             model_name = training_config.get("model", "yolo12l.pt")
-#             project_name = training_config.get("project", "YOLO12_Training")
-#             run_name = training_config.get("run_name", "Aircraft_v12l")
-            
-#             # Initialize trainer
-#             self.trainer = YOLOTrainer(
-#                 model_name=model_name,
-#                 project_name=project_name,
-#                 run_name=run_name,
-#                 logger=self.logger
-#             )
-            
-#             # Load model
-#             self.trainer.load_model()
-            
-#             # Display training info
-#             self._print_training_info(config, dataset_path, data_yaml)
-            
-#             # Train model
-#             self.trainer.train(data_yaml=data_yaml)
-            
-#             # Calculate and display elapsed time
-#             elapsed = time.time() - start_time
-#             self._print_completion(start_datetime, elapsed)
-            
-#         except KeyboardInterrupt:
-#             elapsed = time.time() - start_time
-#             self.logger.warning(f"\nTraining interrupted after {self._format_time(elapsed)}")
-#             sys.exit(1)
-            
-#         except Exception as e:
-#             elapsed = time.time() - start_time
-#             self.logger.error(f"\nTraining failed after {self._format_time(elapsed)}")
-#             self.logger.error(f"Error: {e}")
-#             raise
-    
-#     def _print_header(self) -> None:
-#         """Print the training header."""
-#         self.logger.info("=" * 70)
-#         self.logger.info("YOLO12L Training Pipeline")
-#         self.logger.info("=" * 70)
-#         self.logger.info(f"Current Directory: {os.getcwd()}")
-#         self.logger.info("")
-    
-#     def _print_training_info(
-#         self,
-#         config: Dict[str, Any],
-#         dataset_path: Path,
-#         data_yaml: str
-#     ) -> None:
-#         """Print training information."""
-#         dataset_config = config.get("dataset", {})
-        
-#         self.logger.info("=" * 70)
-#         self.logger.info("Training Configuration")
-#         self.logger.info("=" * 70)
-#         self.logger.info(f"Repository: {dataset_config.get('repository', 'N/A')}")
-#         self.logger.info(f"Dataset Path: {dataset_path}")
-#         self.logger.info(f"Data YAML: {data_yaml}")
-#         self.logger.info(f"Model: {config.get('training', {}).get('model', 'N/A')}")
-#         self.logger.info(f"Project: {config.get('training', {}).get('project', 'N/A')}")
-#         self.logger.info(f"Run Name: {config.get('training', {}).get('run_name', 'N/A')}")
-#         self.logger.info("=" * 70)
-#         self.logger.info("Training Started")
-#         self.logger.info("=" * 70)
-    
-#     def _print_completion(self, start_datetime: datetime, elapsed: float) -> None:
-#         """Print training completion information."""
-#         end_datetime = datetime.now()
-#         formatted_time = self._format_time(elapsed)
-        
-#         self.logger.info("=" * 70)
-#         self.logger.info("Training Completed Successfully")
-#         self.logger.info("=" * 70)
-#         self.logger.info(f"Started: {start_datetime}")
-#         self.logger.info(f"Ended  : {end_datetime}")
-#         self.logger.info(f"Duration: {formatted_time}")
-#         self.logger.info("=" * 70)
-    
-#     @staticmethod
-#     def _format_time(seconds: float) -> str:
-#         """Format time in seconds to human-readable format."""
-#         hours = int(seconds // 3600)
-#         minutes = int((seconds % 3600) // 60)
-#         secs = int(seconds % 60)
-        
-#         if hours > 0:
-#             return f"{hours}h {minutes}m {secs}s"
-#         elif minutes > 0:
-#             return f"{minutes}m {secs}s"
-#         else:
-#             return f"{secs}s"
-
-# # ==========================================================
-# # MAIN EXECUTION
-# # ==========================================================
-
-# def main() -> None:
-#     """Main entry point for the training pipeline."""
-#     # Setup logging
-#     logger = setup_logging()
-    
-#     try:
-#         # Create and run pipeline
-#         pipeline = TrainingPipeline(logger=logger)
-#         pipeline.run()
-        
-#     except Exception as e:
-#         logger.error(f"Pipeline execution failed: {e}")
-#         sys.exit(1)
-
-# if __name__ == "__main__":
-#     main()
-
-
-
-"""
-YOLO12L Training Pipeline
-
-A complete production-level training pipeline that automatically:
-- Clones the dataset repository based on status flag in config
-- Validates dataset structure
-- Updates data.yaml with correct absolute paths
-- Trains YOLO12L model with specified parameters
-- Logs all operations and errors
-- Logs training metrics (losses, mAP, etc.) in JSON format
-"""
-
 import os
-import sys
 import shutil
 import subprocess
 import time
 import yaml
-import logging
 import json
-from pathlib import Path
+import logging
 from datetime import datetime
-from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass
 
 from ultralytics import YOLO
 
 # ==========================================================
-# CONSTANTS
+# Configuration
 # ==========================================================
 
-CONFIG_FILE = "config.yaml"
-LOG_DIR = "logs"
-LOG_FILE = os.path.join(LOG_DIR, "training.log")
-METRICS_LOG_FILE = os.path.join(LOG_DIR, "training_metrics.json")
+DATASET_REPO = "https://github.com/Ganapatiknaspl/train-yolo12l-model.git"
+LOCAL_DATASET_DIR = "AerialDataset"
+MODEL = "yolo12l.pt"
+PROJECT_NAME = "YOLO12_Training"
+RUN_NAME = "Aircraft_v12l"
 
 # ==========================================================
-# DEFAULT CONFIGURATION
+# Setup Logging
 # ==========================================================
 
-DEFAULT_CONFIG = {
-    "dataset": {
-        "repository": "https://github.com/Ganapatiknaspl/train-yolo12l-model.git",
-        "local_folder": "AerialDataset",
-        "branch": "master"
+os.makedirs("logs", exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join("logs", "training.log"), encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# ==========================================================
+# Verify Git Installation
+# ==========================================================
+
+logger.info("=" * 70)
+logger.info("Checking Git Installation...")
+logger.info("=" * 70)
+
+if shutil.which("git") is None:
+    raise RuntimeError(
+        "\nGit is not installed.\n"
+        "Download from: https://git-scm.com/downloads"
+    )
+
+logger.info("Git Found")
+
+# ==========================================================
+# Read status from config.yaml in the dataset repo
+# ==========================================================
+
+config_path = os.path.join(LOCAL_DATASET_DIR, "config.yaml")
+
+# Check if dataset exists and has config.yaml
+if os.path.exists(config_path):
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+        status = config.get("status", False)
+    logger.info(f"Status from config.yaml: {status} (True = clone, False = skip)")
+else:
+    # If dataset doesn't exist, we need to clone it
+    if not os.path.exists(LOCAL_DATASET_DIR):
+        status = True
+        logger.info("Dataset not found. Will clone.")
+    else:
+        status = False
+        logger.warning("config.yaml not found. Defaulting to skip clone.")
+
+# ==========================================================
+# Clone Repository based on status
+# ==========================================================
+
+if status:  # True = CLONE
+    logger.info("\nCloning repository...")
+    if os.path.exists(LOCAL_DATASET_DIR):
+        logger.info("Dataset already exists. Pulling latest changes...")
+        subprocess.run(
+            ["git", "-C", LOCAL_DATASET_DIR, "pull"],
+            check=True
+        )
+    else:
+        logger.info("Downloading Dataset Repository...")
+        subprocess.run(
+            ["git", "clone", "--depth", "1", DATASET_REPO, LOCAL_DATASET_DIR],
+            check=True
+        )
+    logger.info("Repository ready.")
+else:  # False = DON'T CLONE
+    logger.info("Status is False. Skipping clone.")
+    if not os.path.exists(LOCAL_DATASET_DIR):
+        raise RuntimeError(
+            f"Dataset not found at {LOCAL_DATASET_DIR} and status is False.\n"
+            f"Set status: true in config.yaml to clone the dataset."
+        )
+
+# ==========================================================
+# Locate data.yaml and update path
+# ==========================================================
+
+DATA_YAML = os.path.join(LOCAL_DATASET_DIR, "data.yaml")
+
+if not os.path.exists(DATA_YAML):
+    raise FileNotFoundError(f"\nCannot locate:\n{DATA_YAML}")
+
+logger.info(f"\ndata.yaml Found\n{DATA_YAML}")
+
+# Update data.yaml with absolute path
+with open(DATA_YAML, 'r') as f:
+    data_config = yaml.safe_load(f)
+
+abs_path = os.path.abspath(LOCAL_DATASET_DIR)
+data_config['path'] = abs_path
+
+with open(DATA_YAML, 'w') as f:
+    yaml.dump(data_config, f, sort_keys=False)
+
+logger.info(f"Updated data.yaml path to: {abs_path}")
+
+# ==========================================================
+# Fix: Remove label files without corresponding images
+# ==========================================================
+
+logger.info("\nChecking dataset integrity...")
+
+for split in ['train', 'valid', 'test']:
+    labels_dir = os.path.join(LOCAL_DATASET_DIR, split, 'labels')
+    images_dir = os.path.join(LOCAL_DATASET_DIR, split, 'images')
+    
+    if os.path.exists(labels_dir) and os.path.exists(images_dir):
+        removed = 0
+        for label_file in os.listdir(labels_dir):
+            if label_file.endswith('.txt'):
+                # Try .jpg
+                image_name = label_file.replace('.txt', '.jpg')
+                image_path = os.path.join(images_dir, image_name)
+                
+                # Try .png if .jpg not found
+                if not os.path.exists(image_path):
+                    image_name = label_file.replace('.txt', '.png')
+                    image_path = os.path.join(images_dir, image_name)
+                
+                # If still not found, remove the label
+                if not os.path.exists(image_path):
+                    os.remove(os.path.join(labels_dir, label_file))
+                    removed += 1
+        
+        if removed > 0:
+            logger.info(f"  Removed {removed} label files without images in {split}")
+
+logger.info("Dataset check complete.")
+
+# ==========================================================
+# Setup Metrics JSON
+# ==========================================================
+
+metrics_file = os.path.join("logs", "training_metrics.json")
+metrics_data = {
+    "training_info": {
+        "start_time": None,
+        "end_time": None,
+        "total_epochs": 0,
+        "model": MODEL,
+        "dataset": DATA_YAML,
+        "project": PROJECT_NAME,
+        "run_name": RUN_NAME
     },
-    "training": {
-        "model": "yolo12l.pt",
-        "project": "YOLO12_Training",
-        "run_name": "Aircraft_v12l"
-    },
-    "status": True  # True = clone/pull, False = skip cloning
+    "epochs": [],
+    "final_metrics": {}
 }
 
 # ==========================================================
-# LOGGING SETUP
+# Start Timer
 # ==========================================================
 
-def setup_logging() -> logging.Logger:
-    """Configure logging system with both file and console handlers."""
-    
-    # Create logs directory if it doesn't exist
-    os.makedirs(LOG_DIR, exist_ok=True)
-    
-    # Create logger
-    logger = logging.getLogger("YOLOTraining")
-    logger.setLevel(logging.DEBUG)
-    
-    # Clear any existing handlers
-    logger.handlers.clear()
-    
-    # File handler for training log
-    file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
-    file_handler.setLevel(logging.DEBUG)
-    file_format = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    file_handler.setFormatter(file_format)
-    
-    # Console handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
-    console_format = logging.Formatter('%(message)s')
-    console_handler.setFormatter(console_format)
-    
-    # Add handlers
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-    
-    return logger
+start_datetime = datetime.now()
+start_time = time.time()
+
+metrics_data["training_info"]["start_time"] = start_datetime.isoformat()
+
+logger.info("\n" + "=" * 70)
+logger.info(f"Training Started : {start_datetime}")
+logger.info("=" * 70)
 
 # ==========================================================
-# METRICS LOGGER
+# Load YOLO Model
 # ==========================================================
 
-class MetricsLogger:
-    """
-    Logs training metrics (losses, mAP, etc.) to a JSON file.
-    """
-    
-    def __init__(self, log_file: str = METRICS_LOG_FILE, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the MetricsLogger.
-        
-        Args:
-            log_file: Path to the metrics JSON file
-            logger: Logger instance for logging operations
-        """
-        self.log_file = log_file
-        self.logger = logger or logging.getLogger("YOLOTraining")
-        self.metrics_data: Dict[str, Any] = {
-            "training_info": {
-                "start_time": None,
-                "end_time": None,
-                "total_epochs": 0,
-                "model": None,
-                "dataset": None,
-                "project": None,
-                "run_name": None,
-                "parameters": {}
-            },
-            "epochs": [],
-            "final_metrics": {}
-        }
-        
-    def initialize(self, training_info: Dict[str, Any]) -> None:
-        """
-        Initialize the metrics log with training information.
-        
-        Args:
-            training_info: Dictionary with training information
-        """
-        self.metrics_data["training_info"].update(training_info)
-        self.metrics_data["training_info"]["start_time"] = datetime.now().isoformat()
-        self._save_metrics()
-        self.logger.info(f"Metrics log initialized: {self.log_file}")
-    
-    def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]) -> None:
-        """
-        Log metrics for a specific epoch.
-        
-        Args:
-            epoch: Epoch number
-            metrics: Dictionary of metrics
-        """
-        try:
-            # Clean metrics - convert numpy values to Python types
-            clean_metrics = {}
-            for key, value in metrics.items():
-                if hasattr(value, 'item'):
-                    clean_metrics[key] = value.item()
-                elif isinstance(value, (list, tuple)):
-                    clean_metrics[key] = [v.item() if hasattr(v, 'item') else v for v in value]
-                else:
-                    clean_metrics[key] = value
-            
-            # Add epoch to metrics
-            epoch_entry = {
-                "epoch": epoch,
-                "timestamp": datetime.now().isoformat(),
-                "metrics": clean_metrics
-            }
-            
-            # Append to epochs list
-            self.metrics_data["epochs"].append(epoch_entry)
-            self.metrics_data["training_info"]["total_epochs"] = epoch
-            
-            # Save to file
-            self._save_metrics()
-            self.logger.debug(f"Metrics logged for epoch {epoch}")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to log metrics for epoch {epoch}: {e}")
-    
-    def log_final_metrics(self, final_metrics: Dict[str, Any]) -> None:
-        """
-        Log final training metrics.
-        
-        Args:
-            final_metrics: Dictionary of final metrics
-        """
-        try:
-            # Clean metrics - convert numpy values to Python types
-            clean_metrics = {}
-            for key, value in final_metrics.items():
-                if hasattr(value, 'item'):
-                    clean_metrics[key] = value.item()
-                elif isinstance(value, (list, tuple)):
-                    clean_metrics[key] = [v.item() if hasattr(v, 'item') else v for v in value]
-                else:
-                    clean_metrics[key] = value
-            
-            self.metrics_data["final_metrics"] = clean_metrics
-            self.metrics_data["training_info"]["end_time"] = datetime.now().isoformat()
-            self._save_metrics()
-            self.logger.info(f"Final metrics logged to {self.log_file}")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to log final metrics: {e}")
-    
-    def _save_metrics(self) -> None:
-        """Save metrics data to JSON file."""
-        try:
-            with open(self.log_file, 'w', encoding='utf-8') as f:
-                json.dump(self.metrics_data, f, indent=2, default=str)
-        except Exception as e:
-            self.logger.error(f"Failed to save metrics: {e}")
+model = YOLO(MODEL)
 
 # ==========================================================
-# CONFIGURATION MANAGER
+# Train Model with callback to log metrics
 # ==========================================================
 
-class ConfigurationManager:
-    """
-    Manages configuration loading, saving, and validation.
-    """
+def log_epoch_metrics(trainer):
+    epoch = trainer.epoch
+    metrics = trainer.metrics
     
-    def __init__(self, config_path: str = CONFIG_FILE, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the ConfigurationManager.
-        
-        Args:
-            config_path: Path to the configuration file
-            logger: Logger instance for logging operations
-        """
-        self.config_path = config_path
-        self.logger = logger or logging.getLogger("YOLOTraining")
-        self.config: Dict[str, Any] = {}
-        
-    def create_default_config(self) -> None:
-        """Create default configuration file if it doesn't exist."""
-        if not os.path.exists(self.config_path):
-            self.logger.info(f"Creating default configuration: {self.config_path}")
-            with open(self.config_path, 'w', encoding='utf-8') as f:
-                yaml.dump(DEFAULT_CONFIG, f, sort_keys=False, default_flow_style=False)
-    
-    def load(self) -> Dict[str, Any]:
-        """
-        Load configuration from file.
-        
-        Returns:
-            Dict containing the configuration
-            
-        Raises:
-            yaml.YAMLError: If the configuration file is invalid
-        """
-        self.create_default_config()
-        
-        try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                self.config = yaml.safe_load(f)
-                
-            if self.config is None:
-                self.config = DEFAULT_CONFIG.copy()
-                self.save()
-                
-            self.logger.debug("Configuration loaded successfully")
-            return self.config
-            
-        except yaml.YAMLError as e:
-            self.logger.error(f"Invalid YAML in config file: {e}")
-            raise
-    
-    def save(self) -> None:
-        """Save current configuration to file."""
-        try:
-            with open(self.config_path, 'w', encoding='utf-8') as f:
-                yaml.dump(self.config, f, sort_keys=False, default_flow_style=False)
-            self.logger.debug("Configuration saved successfully")
-        except Exception as e:
-            self.logger.error(f"Failed to save configuration: {e}")
-            raise
-    
-    def get_dataset_config(self) -> Dict[str, str]:
-        """Get dataset configuration section."""
-        return self.config.get("dataset", {})
-    
-    def get_training_config(self) -> Dict[str, str]:
-        """Get training configuration section."""
-        return self.config.get("training", {})
-    
-    def get_status(self) -> bool:
-        """Get the status flag for cloning."""
-        return self.config.get("status", True)
-
-# ==========================================================
-# GIT REPOSITORY MANAGER
-# ==========================================================
-
-class GitRepositoryManager:
-    """
-    Manages Git operations including clone, pull, and validation.
-    """
-    
-    def __init__(
-        self,
-        repo_url: str,
-        local_folder: str,
-        branch: str = "master",
-        logger: Optional[logging.Logger] = None
-    ):
-        """
-        Initialize the GitRepositoryManager.
-        
-        Args:
-            repo_url: Git repository URL
-            local_folder: Local folder name for the repository
-            branch: Branch to clone/pull
-            logger: Logger instance for logging operations
-        """
-        self.repo_url = repo_url
-        self.local_folder = local_folder
-        self.branch = branch
-        self.logger = logger or logging.getLogger("YOLOTraining")
-    
-    @staticmethod
-    def verify_git_installed() -> None:
-        """
-        Verify that Git is installed on the system.
-        
-        Raises:
-            RuntimeError: If Git is not installed
-        """
-        if shutil.which("git") is None:
-            raise RuntimeError(
-                "\n" + "=" * 70 + "\n"
-                "ERROR: Git is not installed on this system.\n"
-                "Please install Git from: https://git-scm.com/downloads\n"
-                "After installation, restart your terminal and try again.\n"
-                "=" * 70
-            )
-    
-    def is_repository_cloned(self) -> bool:
-        """
-        Check if the repository is already cloned.
-        
-        Returns:
-            True if the repository exists locally
-        """
-        return os.path.exists(self.local_folder) and os.path.isdir(self.local_folder)
-    
-    def clone_repository(self) -> None:
-        """
-        Clone the repository from GitHub.
-        
-        Raises:
-            subprocess.CalledProcessError: If git clone fails
-            RuntimeError: If cloning fails
-        """
-        self.logger.info(f"Cloning repository from: {self.repo_url}")
-        self.logger.info(f"Destination: {self.local_folder}")
-        
-        try:
-            # Remove existing folder if it exists
-            if os.path.exists(self.local_folder):
-                self.logger.info(f"Removing existing folder: {self.local_folder}")
-                shutil.rmtree(self.local_folder)
-            
-            # Use shell=True on Windows and stream output to console
-            process = subprocess.Popen(
-                [
-                    "git",
-                    "clone",
-                    "--depth",
-                    "1",
-                    "--branch",
-                    self.branch,
-                    self.repo_url,
-                    self.local_folder
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
-            
-            # Print output in real-time
-            for line in process.stdout:
-                print(line.strip())
-            
-            # Wait for process to complete
-            return_code = process.wait()
-            
-            if return_code != 0:
-                raise subprocess.CalledProcessError(return_code, "git clone")
-            
-            self.logger.info("Repository cloned successfully")
-            
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Git clone failed with code {e.returncode}")
-            raise RuntimeError(f"Failed to clone repository. Please check your internet connection and repository URL.")
-        except Exception as e:
-            self.logger.error(f"Unexpected error during clone: {e}")
-            raise RuntimeError(f"Failed to clone repository: {e}")
-    
-    def ensure_repository(self, status: bool) -> None:
-        """
-        Ensure the repository is available locally based on status flag.
-        
-        Args:
-            status: If True, clone/pull the repository. If False, skip.
-        """
-        if not status:
-            self.logger.info("Status flag is False. Skipping repository cloning.")
-            return
-        
-        self.verify_git_installed()
-        
-        if self.is_repository_cloned():
-            self.logger.info(f"Repository already exists. Removing and re-cloning as status is True...")
-            self.clone_repository()
+    # Clean metrics for JSON
+    clean_metrics = {}
+    for key, value in metrics.items():
+        if hasattr(value, 'item'):
+            clean_metrics[key] = value.item()
         else:
-            self.clone_repository()
+            clean_metrics[key] = value
+    
+    # Add to metrics data
+    metrics_data["epochs"].append({
+        "epoch": epoch,
+        "timestamp": datetime.now().isoformat(),
+        "metrics": clean_metrics
+    })
+    metrics_data["training_info"]["total_epochs"] = epoch
+    
+    # Save to JSON after each epoch
+    with open(metrics_file, 'w') as f:
+        json.dump(metrics_data, f, indent=2, default=str)
+    
+    logger.info(f"Epoch {epoch} metrics saved to JSON")
+
+model.add_callback("on_fit_epoch_end", log_epoch_metrics)
+
+results = model.train(
+    data=DATA_YAML,
+    epochs=100,
+    patience=20,
+    imgsz=1024,
+    batch=16,
+    workers=8,
+    optimizer="AdamW",
+    lr0=0.001,
+    lrf=0.01,
+    momentum=0.937,
+    weight_decay=0.001,
+    warmup_epochs=3,
+    warmup_momentum=0.8,
+    warmup_bias_lr=0.1,
+    hsv_h=0.015,
+    hsv_s=0.7,
+    hsv_v=0.4,
+    degrees=10,
+    translate=0.10,
+    scale=0.50,
+    shear=2.0,
+    perspective=0.0005,
+    flipud=0.20,
+    fliplr=0.50,
+    mosaic=1.0,
+    mixup=0.15,
+    copy_paste=0.30,
+    close_mosaic=15,
+    box=7.5,
+    cls=1.5,
+    dfl=1.5,
+    dropout=0.10,
+    label_smoothing=0.05,
+    amp=True,
+    cache=True,
+    deterministic=True,
+    seed=42,
+    save=True,
+    save_period=10,
+    plots=True,
+    project=PROJECT_NAME,
+    name=RUN_NAME,
+    exist_ok=True,
+)
 
 # ==========================================================
-# DATASET VALIDATOR
+# Save Final Metrics
 # ==========================================================
 
-class DatasetValidator:
-    """
-    Validates the dataset structure and required files.
-    """
-    
-    REQUIRED_PATHS = [
-        "train/images",
-        "train/labels",
-        "valid/images",
-        "valid/labels",
-        "test/images",
-        "test/labels"
-    ]
-    
-    def __init__(self, dataset_path: str, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the DatasetValidator.
-        
-        Args:
-            dataset_path: Path to the dataset directory
-            logger: Logger instance for logging operations
-        """
-        self.dataset_path = Path(dataset_path)
-        self.logger = logger or logging.getLogger("YOLOTraining")
-    
-    def validate_data_yaml(self) -> Path:
-        """
-        Locate and validate data.yaml file.
-        
-        Returns:
-            Path to the data.yaml file
-            
-        Raises:
-            FileNotFoundError: If data.yaml is not found
-        """
-        data_yaml_path = self.dataset_path / "data.yaml"
-        
-        if not data_yaml_path.exists():
-            raise FileNotFoundError(
-                f"data.yaml not found in: {self.dataset_path}\n"
-                f"Expected location: {data_yaml_path}"
-            )
-        
-        self.logger.info(f"data.yaml found at: {data_yaml_path}")
-        return data_yaml_path
-    
-    def validate_structure(self) -> None:
-        """
-        Validate the complete dataset structure.
-        
-        Raises:
-            FileNotFoundError: If any required directory is missing
-        """
-        self.logger.info("Validating dataset structure...")
-        
-        missing_paths = []
-        
-        for path in self.REQUIRED_PATHS:
-            full_path = self.dataset_path / path
-            if not full_path.exists():
-                missing_paths.append(str(path))
-        
-        if missing_paths:
-            error_msg = (
-                f"Dataset validation failed. Missing required directories:\n"
-                + "\n".join(f"  - {p}" for p in missing_paths)
-                + f"\n\nExpected structure in: {self.dataset_path}"
-            )
-            self.logger.error(error_msg)
-            raise FileNotFoundError(error_msg)
-        
-        self.logger.info("Dataset structure validated successfully")
-    
-    def validate_dataset(self) -> Path:
-        """
-        Perform complete dataset validation.
-        
-        Returns:
-            Path to the validated data.yaml file
-        """
-        data_yaml_path = self.validate_data_yaml()
-        self.validate_structure()
-        return data_yaml_path
+final_metrics = {}
+try:
+    if hasattr(results, 'res_dict'):
+        final_metrics = results.res_dict
+    elif hasattr(results, 'metrics'):
+        final_metrics = results.metrics
+except:
+    pass
+
+metrics_data["final_metrics"] = final_metrics
+metrics_data["training_info"]["end_time"] = datetime.now().isoformat()
+
+with open(metrics_file, 'w') as f:
+    json.dump(metrics_data, f, indent=2, default=str)
+
+logger.info(f"\nMetrics saved to: {metrics_file}")
 
 # ==========================================================
-# DATASET MANAGER
+# End Timer
 # ==========================================================
 
-class DatasetManager:
-    """
-    Manages dataset operations including cloning, validation, and configuration.
-    """
-    
-    def __init__(
-        self,
-        config_manager: ConfigurationManager,
-        logger: Optional[logging.Logger] = None
-    ):
-        """
-        Initialize the DatasetManager.
-        
-        Args:
-            config_manager: ConfigurationManager instance
-            logger: Logger instance for logging operations
-        """
-        self.config_manager = config_manager
-        self.logger = logger or logging.getLogger("YOLOTraining")
-        self.git_manager: Optional[GitRepositoryManager] = None
-        self.validator: Optional[DatasetValidator] = None
-        
-    def prepare_dataset(self, status: bool) -> Path:
-        """
-        Prepare the dataset for training.
-        
-        Args:
-            status: Status flag for cloning
-            
-        Returns:
-            Path to the dataset directory
-            
-        Raises:
-            ValueError: If repository URL or local folder is not specified
-            RuntimeError: If dataset preparation fails
-        """
-        dataset_config = self.config_manager.get_dataset_config()
-        
-        repo_url = dataset_config.get("repository")
-        local_folder = dataset_config.get("local_folder")
-        branch = dataset_config.get("branch", "master")
-        
-        if not repo_url or not local_folder:
-            raise ValueError("Repository URL and local folder must be specified in config")
-        
-        # Initialize Git manager
-        self.git_manager = GitRepositoryManager(
-            repo_url=repo_url,
-            local_folder=local_folder,
-            branch=branch,
-            logger=self.logger
-        )
-        
-        # Ensure repository is available based on status
-        try:
-            self.git_manager.ensure_repository(status)
-        except Exception as e:
-            self.logger.error(f"Failed to prepare dataset: {e}")
-            raise RuntimeError(f"Dataset preparation failed: {e}")
-        
-        # Get absolute path
-        dataset_path = Path(os.path.abspath(local_folder))
-        
-        # Check if dataset exists
-        if not dataset_path.exists():
-            if status:
-                raise RuntimeError(f"Dataset not found at {dataset_path} even after cloning")
-            else:
-                raise RuntimeError(
-                    f"Dataset not found at {dataset_path}\n"
-                    f"Set status: true in config.yaml to clone the dataset"
-                )
-        
-        # Initialize validator
-        self.validator = DatasetValidator(
-            dataset_path=str(dataset_path),
-            logger=self.logger
-        )
-        
-        # Validate dataset
-        try:
-            data_yaml_path = self.validator.validate_dataset()
-        except Exception as e:
-            self.logger.error(f"Dataset validation failed: {e}")
-            raise
-        
-        # Update data.yaml with absolute path
-        self._update_data_yaml_path(data_yaml_path, str(dataset_path))
-        
-        return dataset_path
-    
-    def _update_data_yaml_path(self, data_yaml_path: Path, absolute_path: str) -> None:
-        """
-        Update the path in data.yaml to the absolute local directory.
-        
-        Args:
-            data_yaml_path: Path to data.yaml
-            absolute_path: Absolute path to the dataset directory
-            
-        Raises:
-            RuntimeError: If updating data.yaml fails
-        """
-        try:
-            self.logger.info(f"Updating data.yaml with absolute path: {absolute_path}")
-            
-            with open(data_yaml_path, 'r', encoding='utf-8') as f:
-                data_yaml = yaml.safe_load(f)
-            
-            if data_yaml is None:
-                raise ValueError("data.yaml is empty or invalid")
-            
-            # Update the path
-            data_yaml['path'] = absolute_path
-            
-            # Write back
-            with open(data_yaml_path, 'w', encoding='utf-8') as f:
-                yaml.dump(data_yaml, f, sort_keys=False)
-            
-            self.logger.info("data.yaml updated successfully")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to update data.yaml: {e}")
-            raise RuntimeError(f"Failed to update data.yaml: {e}")
+end_datetime = datetime.now()
+elapsed = time.time() - start_time
 
-# ==========================================================
-# YOLO TRAINER
-# ==========================================================
+hours = int(elapsed // 3600)
+minutes = int((elapsed % 3600) // 60)
+seconds = int(elapsed % 60)
 
-@dataclass
-class TrainingParameters:
-    """Training parameters for YOLO model."""
-    
-    epochs: int = 100
-    patience: int = 20
-    imgsz: int = 1024
-    batch: int = 16
-    workers: int = 8
-    
-    optimizer: str = "AdamW"
-    lr0: float = 0.001
-    lrf: float = 0.01
-    momentum: float = 0.937
-    weight_decay: float = 0.001
-    
-    warmup_epochs: int = 3
-    warmup_momentum: float = 0.8
-    warmup_bias_lr: float = 0.1
-    
-    hsv_h: float = 0.015
-    hsv_s: float = 0.7
-    hsv_v: float = 0.4
-    degrees: float = 10.0
-    translate: float = 0.10
-    scale: float = 0.50
-    shear: float = 2.0
-    perspective: float = 0.0005
-    flipud: float = 0.20
-    fliplr: float = 0.50
-    mosaic: float = 1.0
-    mixup: float = 0.15
-    copy_paste: float = 0.30
-    close_mosaic: int = 15
-    
-    box: float = 7.5
-    cls: float = 1.5
-    dfl: float = 1.5
-    
-    dropout: float = 0.10
-    label_smoothing: float = 0.05
-    
-    amp: bool = True
-    cache: bool = True
-    deterministic: bool = True
-    seed: int = 42
-    
-    save: bool = True
-    save_period: int = 10
-    plots: bool = True
-    exist_ok: bool = True
-
-
-class YOLOTrainer:
-    """
-    Manages YOLO model training.
-    """
-    
-    def __init__(
-        self,
-        model_name: str,
-        project_name: str,
-        run_name: str,
-        metrics_logger: Optional[MetricsLogger] = None,
-        logger: Optional[logging.Logger] = None
-    ):
-        """
-        Initialize the YOLOTrainer.
-        
-        Args:
-            model_name: Name of the YOLO model (e.g., 'yolo12l.pt')
-            project_name: Project name for training outputs
-            run_name: Run name for this training session
-            metrics_logger: MetricsLogger instance for logging metrics
-            logger: Logger instance for logging operations
-        """
-        self.model_name = model_name
-        self.project_name = project_name
-        self.run_name = run_name
-        self.metrics_logger = metrics_logger
-        self.logger = logger or logging.getLogger("YOLOTraining")
-        self.model: Optional[YOLO] = None
-        
-    def load_model(self) -> None:
-        """Load the YOLO model."""
-        self.logger.info(f"Loading model: {self.model_name}")
-        try:
-            self.model = YOLO(self.model_name)
-            self.logger.info("Model loaded successfully")
-        except Exception as e:
-            self.logger.error(f"Failed to load model: {e}")
-            raise RuntimeError(f"Failed to load model: {e}")
-    
-    def train(
-        self,
-        data_yaml: str,
-        params: Optional[TrainingParameters] = None
-    ) -> Any:
-        """
-        Train the YOLO model.
-        
-        Args:
-            data_yaml: Path to data.yaml file
-            params: Training parameters
-            
-        Returns:
-            Training results
-            
-        Raises:
-            RuntimeError: If training fails
-            KeyboardInterrupt: If training is interrupted by user
-        """
-        if self.model is None:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
-        
-        if params is None:
-            params = TrainingParameters()
-        
-        self.logger.info("Starting YOLO training...")
-        self.logger.info(f"Data: {data_yaml}")
-        self.logger.info(f"Epochs: {params.epochs}")
-        self.logger.info(f"Batch size: {params.batch}")
-        self.logger.info(f"Image size: {params.imgsz}")
-        
-        # Initialize metrics logger with training info
-        if self.metrics_logger:
-            training_info = {
-                "model": self.model_name,
-                "dataset": data_yaml,
-                "project": self.project_name,
-                "run_name": self.run_name,
-                "parameters": {
-                    "epochs": params.epochs,
-                    "patience": params.patience,
-                    "batch_size": params.batch,
-                    "imgsz": params.imgsz,
-                    "workers": params.workers,
-                    "optimizer": params.optimizer,
-                    "learning_rate": params.lr0,
-                    "learning_rate_final": params.lrf,
-                    "momentum": params.momentum,
-                    "weight_decay": params.weight_decay,
-                    "warmup_epochs": params.warmup_epochs,
-                    "dropout": params.dropout,
-                    "label_smoothing": params.label_smoothing,
-                    "amp": params.amp,
-                    "cache": params.cache,
-                    "seed": params.seed
-                }
-            }
-            self.metrics_logger.initialize(training_info)
-        
-        try:
-            # Start training
-            results = self.model.train(
-                data=data_yaml,
-                epochs=params.epochs,
-                patience=params.patience,
-                imgsz=params.imgsz,
-                batch=params.batch,
-                workers=params.workers,
-                optimizer=params.optimizer,
-                lr0=params.lr0,
-                lrf=params.lrf,
-                momentum=params.momentum,
-                weight_decay=params.weight_decay,
-                warmup_epochs=params.warmup_epochs,
-                warmup_momentum=params.warmup_momentum,
-                warmup_bias_lr=params.warmup_bias_lr,
-                hsv_h=params.hsv_h,
-                hsv_s=params.hsv_s,
-                hsv_v=params.hsv_v,
-                degrees=params.degrees,
-                translate=params.translate,
-                scale=params.scale,
-                shear=params.shear,
-                perspective=params.perspective,
-                flipud=params.flipud,
-                fliplr=params.fliplr,
-                mosaic=params.mosaic,
-                mixup=params.mixup,
-                copy_paste=params.copy_paste,
-                close_mosaic=params.close_mosaic,
-                box=params.box,
-                cls=params.cls,
-                dfl=params.dfl,
-                dropout=params.dropout,
-                label_smoothing=params.label_smoothing,
-                amp=params.amp,
-                cache=params.cache,
-                deterministic=params.deterministic,
-                seed=params.seed,
-                save=params.save,
-                save_period=params.save_period,
-                plots=params.plots,
-                project=self.project_name,
-                name=self.run_name,
-                exist_ok=params.exist_ok
-            )
-            
-            self.logger.info("Training completed successfully")
-            
-            # Log final metrics
-            if self.metrics_logger and results:
-                final_metrics = self._extract_final_metrics(results)
-                self.metrics_logger.log_final_metrics(final_metrics)
-            
-            return results
-            
-        except KeyboardInterrupt:
-            self.logger.warning("Training interrupted by user")
-            raise
-        except Exception as e:
-            self.logger.error(f"Error during training: {e}")
-            raise RuntimeError(f"Training failed: {e}")
-    
-    def _extract_final_metrics(self, results: Any) -> Dict[str, Any]:
-        """
-        Extract final metrics from training results.
-        
-        Args:
-            results: Training results object
-            
-        Returns:
-            Dictionary of final metrics
-        """
-        metrics = {}
-        try:
-            if hasattr(results, 'res_dict'):
-                metrics = results.res_dict
-            elif hasattr(results, 'metrics'):
-                metrics = results.metrics
-            elif hasattr(results, 'results_dict'):
-                metrics = results.results_dict
-                
-            # Convert numpy values to Python types for JSON serialization
-            if metrics:
-                for key, value in metrics.items():
-                    if hasattr(value, 'item'):
-                        metrics[key] = value.item()
-                    elif isinstance(value, (list, tuple)):
-                        metrics[key] = [v.item() if hasattr(v, 'item') else v for v in value]
-        except Exception as e:
-            self.logger.warning(f"Could not extract final metrics: {e}")
-        
-        return metrics
-
-# ==========================================================
-# TRAINING PIPELINE
-# ==========================================================
-
-class TrainingPipeline:
-    """
-    Orchestrates the complete training pipeline.
-    """
-    
-    def __init__(self, logger: Optional[logging.Logger] = None):
-        """
-        Initialize the TrainingPipeline.
-        
-        Args:
-            logger: Logger instance for logging operations
-        """
-        self.logger = logger or logging.getLogger("YOLOTraining")
-        self.config_manager = ConfigurationManager(logger=self.logger)
-        self.dataset_manager = DatasetManager(self.config_manager, logger=self.logger)
-        self.metrics_logger = MetricsLogger(logger=self.logger)
-        self.trainer: Optional[YOLOTrainer] = None
-        
-    def run(self) -> None:
-        """
-        Execute the complete training pipeline.
-        """
-        start_datetime = datetime.now()
-        start_time = time.time()
-        
-        try:
-            self._print_header()
-            
-            # Load configuration
-            self.logger.info("Loading configuration...")
-            config = self.config_manager.load()
-            
-            # Get status flag
-            status = self.config_manager.get_status()
-            self.logger.info(f"Status flag: {status} (True = clone dataset, False = skip cloning)")
-            
-            # Prepare dataset based on status
-            self.logger.info("Preparing dataset...")
-            dataset_path = self.dataset_manager.prepare_dataset(status)
-            data_yaml = str(dataset_path / "data.yaml")
-            
-            # Get training configuration
-            training_config = self.config_manager.get_training_config()
-            model_name = training_config.get("model", "yolo12l.pt")
-            project_name = training_config.get("project", "YOLO12_Training")
-            run_name = training_config.get("run_name", "Aircraft_v12l")
-            
-            # Initialize trainer with metrics logger
-            self.trainer = YOLOTrainer(
-                model_name=model_name,
-                project_name=project_name,
-                run_name=run_name,
-                metrics_logger=self.metrics_logger,
-                logger=self.logger
-            )
-            
-            # Load model
-            self.trainer.load_model()
-            
-            # Display training info
-            self._print_training_info(config, dataset_path, data_yaml, status)
-            
-            # Train model
-            self.trainer.train(data_yaml=data_yaml)
-            
-            # Calculate and display elapsed time
-            elapsed = time.time() - start_time
-            self._print_completion(start_datetime, elapsed)
-            
-            # Print metrics file location
-            self.logger.info(f"\nMetrics saved to: {METRICS_LOG_FILE}")
-            self.logger.info(f"Detailed log saved to: {LOG_FILE}")
-            
-        except KeyboardInterrupt:
-            elapsed = time.time() - start_time
-            self.logger.warning(f"\nTraining interrupted after {self._format_time(elapsed)}")
-            sys.exit(1)
-            
-        except Exception as e:
-            elapsed = time.time() - start_time
-            self.logger.error(f"\nTraining failed after {self._format_time(elapsed)}")
-            self.logger.error(f"Error: {e}")
-            raise
-    
-    def _print_header(self) -> None:
-        """Print the training header."""
-        self.logger.info("=" * 70)
-        self.logger.info("YOLO12L Training Pipeline")
-        self.logger.info("=" * 70)
-        self.logger.info(f"Current Directory: {os.getcwd()}")
-        self.logger.info("")
-    
-    def _print_training_info(
-        self,
-        config: Dict[str, Any],
-        dataset_path: Path,
-        data_yaml: str,
-        status: bool
-    ) -> None:
-        """Print training information."""
-        dataset_config = config.get("dataset", {})
-        
-        self.logger.info("=" * 70)
-        self.logger.info("Training Configuration")
-        self.logger.info("=" * 70)
-        self.logger.info(f"Repository: {dataset_config.get('repository', 'N/A')}")
-        self.logger.info(f"Dataset Path: {dataset_path}")
-        self.logger.info(f"Data YAML: {data_yaml}")
-        self.logger.info(f"Model: {config.get('training', {}).get('model', 'N/A')}")
-        self.logger.info(f"Project: {config.get('training', {}).get('project', 'N/A')}")
-        self.logger.info(f"Run Name: {config.get('training', {}).get('run_name', 'N/A')}")
-        self.logger.info(f"Status Flag: {status} (True=clone, False=skip)")
-        self.logger.info(f"Metrics Log: {METRICS_LOG_FILE}")
-        self.logger.info("=" * 70)
-        self.logger.info("Training Started")
-        self.logger.info("=" * 70)
-    
-    def _print_completion(self, start_datetime: datetime, elapsed: float) -> None:
-        """Print training completion information."""
-        end_datetime = datetime.now()
-        formatted_time = self._format_time(elapsed)
-        
-        self.logger.info("=" * 70)
-        self.logger.info("Training Completed Successfully")
-        self.logger.info("=" * 70)
-        self.logger.info(f"Started: {start_datetime}")
-        self.logger.info(f"Ended  : {end_datetime}")
-        self.logger.info(f"Duration: {formatted_time}")
-        self.logger.info("=" * 70)
-    
-    @staticmethod
-    def _format_time(seconds: float) -> str:
-        """Format time in seconds to human-readable format."""
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        
-        if hours > 0:
-            return f"{hours}h {minutes}m {secs}s"
-        elif minutes > 0:
-            return f"{minutes}m {secs}s"
-        else:
-            return f"{secs}s"
-
-# ==========================================================
-# MAIN EXECUTION
-# ==========================================================
-
-def main() -> None:
-    """Main entry point for the training pipeline."""
-    # Setup logging
-    logger = setup_logging()
-    
-    try:
-        # Create and run pipeline
-        pipeline = TrainingPipeline(logger=logger)
-        pipeline.run()
-        
-    except Exception as e:
-        logger.error(f"Pipeline execution failed: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+logger.info("\n" + "=" * 70)
+logger.info("Training Completed")
+logger.info("=" * 70)
+logger.info(f"Started : {start_datetime}")
+logger.info(f"Ended   : {end_datetime}")
+logger.info(f"Duration: {hours} Hours {minutes} Minutes {seconds} Seconds")
+logger.info(f"Total Seconds : {elapsed:.2f}")
+logger.info("=" * 70)
