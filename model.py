@@ -274,52 +274,87 @@ from datetime import datetime
 import yaml
 from ultralytics import YOLO
 
-# ==========================================================
-# CONFIG FILE
-# ==========================================================
+# =====================================================
+# CONFIG
+# =====================================================
 
 CONFIG_FILE = "config.yaml"
 
-# ==========================================================
+DEFAULT_CONFIG = {
+    "dataset": {
+        "repo": "https://github.com/Ganapatiknaspl/train-yolo12l-model.git",
+        "folder": "AerialDataset",
+        "branch": "master",
+    },
+    "status": {
+        "cloned": False,
+    },
+}
+
+# =====================================================
+# CREATE CONFIG
+# =====================================================
+
+def create_config():
+
+    if not os.path.exists(CONFIG_FILE):
+
+        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+            yaml.dump(
+                DEFAULT_CONFIG,
+                f,
+                sort_keys=False,
+            )
+
+        print("config.yaml created.")
+
+# =====================================================
 # LOAD CONFIG
-# ==========================================================
+# =====================================================
 
 def load_config():
 
-    if not os.path.exists(CONFIG_FILE):
-        raise FileNotFoundError(CONFIG_FILE)
+    create_config()
 
-    with open(CONFIG_FILE, "r") as f:
-        return yaml.safe_load(f)
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
 
-# ==========================================================
+    if config is None:
+        config = DEFAULT_CONFIG
+        save_config(config)
+
+    return config
+
+# =====================================================
 # SAVE CONFIG
-# ==========================================================
+# =====================================================
 
 def save_config(config):
 
-    with open(CONFIG_FILE, "w") as f:
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         yaml.dump(
             config,
             f,
-            sort_keys=False
+            sort_keys=False,
         )
 
-# ==========================================================
+# =====================================================
 # VERIFY GIT
-# ==========================================================
+# =====================================================
 
 def verify_git():
 
     if shutil.which("git") is None:
+
         raise RuntimeError(
             "Git is not installed.\n"
+            "Install Git:\n"
             "https://git-scm.com/downloads"
         )
 
-# ==========================================================
+# =====================================================
 # CLONE DATASET
-# ==========================================================
+# =====================================================
 
 def clone_dataset(config):
 
@@ -327,81 +362,64 @@ def clone_dataset(config):
     folder = config["dataset"]["folder"]
     branch = config["dataset"]["branch"]
 
-    already_cloned = config["status"]["cloned"]
+    cloned = config["status"]["cloned"]
 
-    if already_cloned and os.path.isdir(folder):
+    if cloned and os.path.isdir(folder):
 
-        print("=" * 70)
-        print("Repository already cloned.")
-        print("=" * 70)
+        print("Dataset already cloned.")
         return
 
     if os.path.isdir(folder):
+
         shutil.rmtree(folder)
 
-    print("=" * 70)
     print("Cloning Dataset Repository...")
-    print("=" * 70)
 
     subprocess.run(
+
         [
             "git",
             "clone",
-            "--branch",
-            branch,
             "--depth",
             "1",
+            "--branch",
+            branch,
             repo,
             folder,
         ],
+
         check=True,
+
     )
 
     config["status"]["cloned"] = True
 
     save_config(config)
 
-    print("=" * 70)
-    print("Repository Cloned Successfully.")
-    print("=" * 70)
-
-# ==========================================================
+# =====================================================
 # VERIFY DATASET
-# ==========================================================
+# =====================================================
 
 def verify_dataset(config):
 
-    root = config["dataset"]["folder"]
+    folder = config["dataset"]["folder"]
 
-    folders = [
+    data_yaml = os.path.join(
+        folder,
+        "data.yaml",
+    )
 
-        "train/images",
-        "train/labels",
+    if not os.path.exists(data_yaml):
 
-        "valid/images",
-        "valid/labels",
+        raise FileNotFoundError(
+            f"{data_yaml} not found."
+        )
 
-        "test/images",
-        "test/labels",
-    ]
+    return data_yaml
 
-    for folder in folders:
-
-        path = os.path.join(root, folder)
-
-        if not os.path.exists(path):
-            raise FileNotFoundError(path)
-
-    yaml_file = os.path.join(root, "data.yaml")
-
-    if not os.path.exists(yaml_file):
-        raise FileNotFoundError(yaml_file)
-
-    return yaml_file
-
-# ==========================================================
-# TRAIN MODEL
-# ==========================================================
+# =====================================================
+# TRAIN
+# =====================================================
 
 def train(data_yaml):
 
@@ -467,29 +485,36 @@ def train(data_yaml):
         save_period=10,
         plots=True,
 
-        project="YOLO12_Training",
-
+        project="./YOLO12_Training",
         name="Aircraft_v12l",
-
         exist_ok=True,
     )
 
-# ==========================================================
+# =====================================================
 # MAIN
-# ==========================================================
+# =====================================================
 
 def main():
+
+    print("=" * 70)
+    print("YOLO12 Training")
+    print("=" * 70)
+
+    print("Current Directory:")
+    print(os.getcwd())
 
     verify_git()
 
     config = load_config()
+
+    print("\nLoaded Configuration:")
+    print(config)
 
     clone_dataset(config)
 
     data_yaml = verify_dataset(config)
 
     start_datetime = datetime.now()
-
     start_time = time.time()
 
     print("=" * 70)
@@ -508,17 +533,14 @@ def main():
     s = int(elapsed % 60)
 
     print("=" * 70)
-    print("Training Finished")
+    print("Training Completed")
     print("=" * 70)
 
     print("Started :", start_datetime)
     print("Ended   :", end_datetime)
-
     print(f"Duration : {h}h {m}m {s}s")
 
-    print("=" * 70)
-
-# ==========================================================
+# =====================================================
 
 if __name__ == "__main__":
     main()

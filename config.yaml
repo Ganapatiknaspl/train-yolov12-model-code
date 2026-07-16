@@ -1,0 +1,6 @@
+dataset:
+  repo: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+  folder: AerialDataset
+  branch: master
+status:
+  cloned: true
