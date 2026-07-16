@@ -8,4 +8,4 @@ training:
   project: YOLO12_Training
   run_name: Aircraft_v12l
 
-status: false  # true = clone/pull dataset, false = skip cloning
+status: true  # true = clone/pull dataset, false = skip cloning

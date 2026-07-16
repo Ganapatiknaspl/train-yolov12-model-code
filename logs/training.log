@@ -212,3 +212,43 @@ Training interrupted after 28s
 Training failed after 0s
 2026-07-16 17:09:45 - YOLOTraining - ERROR - Error: Dataset preparation failed: Failed to clone repository: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
 2026-07-16 17:09:45 - YOLOTraining - ERROR - Pipeline execution failed: Dataset preparation failed: Failed to clone repository: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
+2026-07-16 17:11:47 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:47 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 17:11:47 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:47 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 17:11:47 - YOLOTraining - INFO - 
+2026-07-16 17:11:47 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 17:11:47 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 17:11:47 - YOLOTraining - INFO - Status flag: False (True = clone dataset, False = skip cloning)
+2026-07-16 17:11:47 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 17:11:47 - YOLOTraining - INFO - Status flag is False. Skipping repository cloning.
+2026-07-16 17:11:47 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 17:11:47 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 17:11:47 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 17:11:47 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 17:11:47 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 17:11:47 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 17:11:48 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 17:11:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:48 - YOLOTraining - INFO - Training Configuration
+2026-07-16 17:11:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:48 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 17:11:48 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 17:11:48 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 17:11:48 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 17:11:48 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 17:11:48 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 17:11:48 - YOLOTraining - INFO - Status Flag: False (True=clone, False=skip)
+2026-07-16 17:11:48 - YOLOTraining - INFO - Metrics Log: logs\training_metrics.json
+2026-07-16 17:11:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:48 - YOLOTraining - INFO - Training Started
+2026-07-16 17:11:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:11:48 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 17:11:48 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 17:11:48 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 17:11:48 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 17:11:48 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 17:11:48 - YOLOTraining - INFO - Metrics log initialized: logs\training_metrics.json
+2026-07-16 17:12:23 - YOLOTraining - WARNING - Training interrupted by user
+2026-07-16 17:12:23 - YOLOTraining - WARNING - 
+Training interrupted after 36s

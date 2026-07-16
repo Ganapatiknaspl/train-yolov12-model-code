@@ -1,6 +1,6 @@
 {
   "training_info": {
-    "start_time": "2026-07-16T16:40:20.143889",
+    "start_time": "2026-07-16T17:11:48.036823",
     "end_time": null,
     "total_epochs": 0,
     "model": "yolo12l.pt",
