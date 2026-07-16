@@ -1,0 +1,11 @@
+path: .
+train: https://github.com/Ganapatiknaspl/train-yolo12l-model/train/images
+val: https://github.com/Ganapatiknaspl/train-yolo12l-model/valid/images
+test: https://github.com/Ganapatiknaspl/train-yolo12l-model/test/images
+
+nc: 4
+names:
+  0: airplane
+  1: drone
+  2: helicopter
+  3: bird
