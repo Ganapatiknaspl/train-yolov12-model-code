@@ -1,0 +1,214 @@
+2026-07-16 15:30:38 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:30:38 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 15:30:38 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:30:38 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 15:30:38 - YOLOTraining - INFO - 
+2026-07-16 15:30:38 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 15:30:38 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 15:30:38 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 15:30:38 - YOLOTraining - INFO - Cloning repository from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:30:38 - YOLOTraining - INFO - Destination: AerialDataset
+2026-07-16 15:33:41 - YOLOTraining - INFO - Repository cloned successfully
+2026-07-16 15:33:41 - YOLOTraining - DEBUG - Configuration saved successfully
+2026-07-16 15:33:41 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:33:41 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 15:33:41 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 15:33:41 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:33:41 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 15:33:41 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 15:33:42 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 15:33:42 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:33:42 - YOLOTraining - INFO - Training Configuration
+2026-07-16 15:33:42 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:33:42 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:33:42 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:33:42 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:33:42 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 15:33:42 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 15:33:42 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 15:33:42 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:33:42 - YOLOTraining - INFO - Training Started
+2026-07-16 15:33:42 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:33:42 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 15:33:42 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:33:42 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 15:33:42 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 15:33:42 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 15:36:20 - YOLOTraining - WARNING - Training interrupted by user
+2026-07-16 15:36:20 - YOLOTraining - WARNING - 
+Training interrupted after 5m 42s
+2026-07-16 15:36:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:51 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 15:36:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:51 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 15:36:51 - YOLOTraining - INFO - 
+2026-07-16 15:36:51 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 15:36:51 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 15:36:51 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 15:36:51 - YOLOTraining - INFO - Repository already exists locally
+2026-07-16 15:36:51 - YOLOTraining - INFO - Pulling latest changes from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:36:53 - YOLOTraining - INFO - Repository updated successfully
+2026-07-16 15:36:53 - YOLOTraining - DEBUG - Configuration saved successfully
+2026-07-16 15:36:53 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:36:53 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 15:36:53 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 15:36:53 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:36:53 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 15:36:53 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 15:36:54 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 15:36:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:54 - YOLOTraining - INFO - Training Configuration
+2026-07-16 15:36:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:54 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:36:54 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:36:54 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:36:54 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 15:36:54 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 15:36:54 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 15:36:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:54 - YOLOTraining - INFO - Training Started
+2026-07-16 15:36:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:36:54 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 15:36:54 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:36:54 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 15:36:54 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 15:36:54 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 15:37:32 - YOLOTraining - WARNING - Training interrupted by user
+2026-07-16 15:37:32 - YOLOTraining - WARNING - 
+Training interrupted after 41s
+2026-07-16 15:43:52 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:52 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 15:43:52 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:52 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 15:43:52 - YOLOTraining - INFO - 
+2026-07-16 15:43:52 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 15:43:52 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 15:43:52 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 15:43:52 - YOLOTraining - INFO - Repository already exists locally
+2026-07-16 15:43:52 - YOLOTraining - INFO - Pulling latest changes from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:43:54 - YOLOTraining - INFO - Repository updated successfully
+2026-07-16 15:43:54 - YOLOTraining - DEBUG - Configuration saved successfully
+2026-07-16 15:43:54 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:43:54 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 15:43:54 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 15:43:54 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:43:54 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 15:43:54 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 15:43:54 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 15:43:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:54 - YOLOTraining - INFO - Training Configuration
+2026-07-16 15:43:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:54 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 15:43:54 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 15:43:54 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:43:54 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 15:43:54 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 15:43:54 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 15:43:54 - YOLOTraining - INFO - Metrics Log: logs\training_metrics.csv
+2026-07-16 15:43:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:54 - YOLOTraining - INFO - Training Started
+2026-07-16 15:43:54 - YOLOTraining - INFO - ======================================================================
+2026-07-16 15:43:54 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 15:43:54 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 15:43:54 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 15:43:54 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 15:43:54 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 15:43:54 - YOLOTraining - DEBUG - Metrics CSV initialized with headers: ['epoch', 'train/box_loss', 'train/cls_loss', 'train/dfl_loss', 'metrics/precision(B)', 'metrics/recall(B)', 'metrics/mAP50(B)', 'metrics/mAP50-95(B)', 'val/box_loss', 'val/cls_loss', 'val/dfl_loss', 'lr/pg0', 'lr/pg1', 'lr/pg2']
+2026-07-16 16:24:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:48 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 16:24:48 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:48 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 16:24:48 - YOLOTraining - INFO - 
+2026-07-16 16:24:48 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 16:24:48 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 16:24:48 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 16:24:48 - YOLOTraining - INFO - Repository already exists locally
+2026-07-16 16:24:48 - YOLOTraining - INFO - Pulling latest changes from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 16:24:50 - YOLOTraining - INFO - Repository updated successfully
+2026-07-16 16:24:50 - YOLOTraining - DEBUG - Configuration saved successfully
+2026-07-16 16:24:50 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:24:50 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 16:24:50 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 16:24:50 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 16:24:50 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 16:24:50 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 16:24:51 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 16:24:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:51 - YOLOTraining - INFO - Training Configuration
+2026-07-16 16:24:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:51 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 16:24:51 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 16:24:51 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:24:51 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 16:24:51 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 16:24:51 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 16:24:51 - YOLOTraining - INFO - Metrics Log: logs\training_metrics.csv
+2026-07-16 16:24:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:51 - YOLOTraining - INFO - Training Started
+2026-07-16 16:24:51 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:24:51 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 16:24:51 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:24:51 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 16:24:51 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 16:24:51 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 16:24:51 - YOLOTraining - DEBUG - Metrics CSV initialized with headers: ['epoch', 'train/box_loss', 'train/cls_loss', 'train/dfl_loss', 'metrics/precision(B)', 'metrics/recall(B)', 'metrics/mAP50(B)', 'metrics/mAP50-95(B)', 'val/box_loss', 'val/cls_loss', 'val/dfl_loss', 'lr/pg0', 'lr/pg1', 'lr/pg2']
+2026-07-16 16:25:17 - YOLOTraining - WARNING - Training interrupted by user
+2026-07-16 16:25:17 - YOLOTraining - WARNING - 
+Training interrupted after 28s
+2026-07-16 16:40:17 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:17 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 16:40:17 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:17 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 16:40:17 - YOLOTraining - INFO - 
+2026-07-16 16:40:17 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 16:40:17 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 16:40:17 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 16:40:17 - YOLOTraining - INFO - Repository already exists locally
+2026-07-16 16:40:17 - YOLOTraining - INFO - Pulling latest changes from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 16:40:19 - YOLOTraining - INFO - Repository updated successfully
+2026-07-16 16:40:19 - YOLOTraining - DEBUG - Configuration saved successfully
+2026-07-16 16:40:19 - YOLOTraining - INFO - data.yaml found at: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:40:19 - YOLOTraining - INFO - Validating dataset structure...
+2026-07-16 16:40:19 - YOLOTraining - INFO - Dataset structure validated successfully
+2026-07-16 16:40:19 - YOLOTraining - INFO - Updating data.yaml with absolute path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 16:40:19 - YOLOTraining - INFO - data.yaml updated successfully
+2026-07-16 16:40:19 - YOLOTraining - INFO - Loading model: yolo12l.pt
+2026-07-16 16:40:20 - YOLOTraining - INFO - Model loaded successfully
+2026-07-16 16:40:20 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:20 - YOLOTraining - INFO - Training Configuration
+2026-07-16 16:40:20 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:20 - YOLOTraining - INFO - Repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 16:40:20 - YOLOTraining - INFO - Dataset Path: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset
+2026-07-16 16:40:20 - YOLOTraining - INFO - Data YAML: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:40:20 - YOLOTraining - INFO - Model: yolo12l.pt
+2026-07-16 16:40:20 - YOLOTraining - INFO - Project: YOLO12_Training
+2026-07-16 16:40:20 - YOLOTraining - INFO - Run Name: Aircraft_v12l
+2026-07-16 16:40:20 - YOLOTraining - INFO - Metrics Log: logs\training_metrics.json
+2026-07-16 16:40:20 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:20 - YOLOTraining - INFO - Training Started
+2026-07-16 16:40:20 - YOLOTraining - INFO - ======================================================================
+2026-07-16 16:40:20 - YOLOTraining - INFO - Starting YOLO training...
+2026-07-16 16:40:20 - YOLOTraining - INFO - Data: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN\AerialDataset\data.yaml
+2026-07-16 16:40:20 - YOLOTraining - INFO - Epochs: 100
+2026-07-16 16:40:20 - YOLOTraining - INFO - Batch size: 16
+2026-07-16 16:40:20 - YOLOTraining - INFO - Image size: 1024
+2026-07-16 16:40:20 - YOLOTraining - INFO - Metrics log initialized: logs\training_metrics.json
+2026-07-16 17:09:45 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:09:45 - YOLOTraining - INFO - YOLO12L Training Pipeline
+2026-07-16 17:09:45 - YOLOTraining - INFO - ======================================================================
+2026-07-16 17:09:45 - YOLOTraining - INFO - Current Directory: C:\Users\ganapati k n\Downloads\Computer_vision\ML_TRAIN
+2026-07-16 17:09:45 - YOLOTraining - INFO - 
+2026-07-16 17:09:45 - YOLOTraining - INFO - Loading configuration...
+2026-07-16 17:09:45 - YOLOTraining - DEBUG - Configuration loaded successfully
+2026-07-16 17:09:45 - YOLOTraining - INFO - Status flag: True (True = clone dataset, False = skip cloning)
+2026-07-16 17:09:45 - YOLOTraining - INFO - Preparing dataset...
+2026-07-16 17:09:45 - YOLOTraining - INFO - Repository already exists. Removing and re-cloning as status is True...
+2026-07-16 17:09:45 - YOLOTraining - INFO - Cloning repository from: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+2026-07-16 17:09:45 - YOLOTraining - INFO - Destination: AerialDataset
+2026-07-16 17:09:45 - YOLOTraining - INFO - Removing existing folder: AerialDataset
+2026-07-16 17:09:45 - YOLOTraining - ERROR - Unexpected error during clone: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
+2026-07-16 17:09:45 - YOLOTraining - ERROR - Failed to prepare dataset: Failed to clone repository: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
+2026-07-16 17:09:45 - YOLOTraining - ERROR - 
+Training failed after 0s
+2026-07-16 17:09:45 - YOLOTraining - ERROR - Error: Dataset preparation failed: Failed to clone repository: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
+2026-07-16 17:09:45 - YOLOTraining - ERROR - Pipeline execution failed: Dataset preparation failed: Failed to clone repository: [WinError 5] Access is denied: 'AerialDataset\\.git\\objects\\pack\\pack-639f0e01750f655de4e5f067b0e07bc15fbe9a21.idx'
