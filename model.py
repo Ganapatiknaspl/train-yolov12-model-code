@@ -1,66 +1,124 @@
 import os
-import urllib.request
-from urllib.parse import urlparse
-from ultralytics import YOLO
-from datetime import datetime
+import subprocess
+import shutil
+import yaml
 import time
+from datetime import datetime
+from ultralytics import YOLO
 
 # ==========================================================
-# Repository Configuration
+# Configuration
 # ==========================================================
 
-GITHUB_REPOSITORY = "https://github.com/Ganapatiknaspl/train-yolo12l-model"
+DATASET_REPO = "https://github.com/Ganapatiknaspl/train-yolo12l-model.git"
+YAML_REPO = "https://github.com/Ganapatiknaspl/train-yolov12-model-code.git"
 
-# DATA_YAML_URL = (
-#     GITHUB_REPOSITORY +
-#     "./data.yaml"
-# )
+DATASET_DIR = "AerialDataset"
+YAML_DIR = "YOLO_Config"
 
-LOCAL_DATA_YAML = "data.yaml"
-
-# ==========================================================
-# Validate GitHub URL
-# ==========================================================
-
-# parsed = urlparse(GITHUB_REPOSITORY)
-
-# if parsed.scheme not in ("http", "https"):
-#     raise ValueError("Invalid GitHub URL")
-
-# if "github.com" not in parsed.netloc.lower():
-#     raise ValueError("Repository must be hosted on GitHub")
-
-print("=" * 70)
-print("GitHub Repository Verified")
-print(GITHUB_REPOSITORY)
-print("=" * 70)
+MODEL_NAME = "yolo12l.pt"
 
 # ==========================================================
-# Download data.yaml if needed
+# Verify Git
 # ==========================================================
 
-if not os.path.exists(LOCAL_DATA_YAML):
+if shutil.which("git") is None:
+    raise RuntimeError("Git is not installed.")
 
-    print("Downloading data.yaml from GitHub...")
+# ==========================================================
+# Clone Dataset Repository
+# ==========================================================
 
-    urllib.request.urlretrieve(
-        LOCAL_DATA_YAML
+if not os.path.exists(DATASET_DIR):
+
+    print("Cloning Dataset Repository...")
+
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            DATASET_REPO,
+            DATASET_DIR,
+        ],
+        check=True,
     )
 
-    print("Download completed.")
+else:
+
+    print("Updating Dataset Repository...")
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            DATASET_DIR,
+            "pull",
+        ],
+        check=True,
+    )
+
+# ==========================================================
+# Clone YAML Repository
+# ==========================================================
+
+if not os.path.exists(YAML_DIR):
+
+    print("Cloning Configuration Repository...")
+
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            YAML_REPO,
+            YAML_DIR,
+        ],
+        check=True,
+    )
 
 else:
-    print("Using existing local data.yaml")
+
+    print("Updating Configuration Repository...")
+
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            YAML_DIR,
+            "pull",
+        ],
+        check=True,
+    )
 
 # ==========================================================
-# Verify
+# Locate data.yaml
 # ==========================================================
 
-if not os.path.exists(LOCAL_DATA_YAML):
-    raise FileNotFoundError("data.yaml could not be downloaded.")
+DATA_YAML = os.path.join(YAML_DIR, "data.yaml")
+
+if not os.path.exists(DATA_YAML):
+    raise FileNotFoundError(DATA_YAML)
 
 # ==========================================================
-# Record Start Time
+# Update path inside YAML
+# ==========================================================
+
+with open(DATA_YAML, "r") as f:
+    config = yaml.safe_load(f)
+
+config["path"] = os.path.abspath(DATASET_DIR)
+
+with open(DATA_YAML, "w") as f:
+    yaml.dump(config, f, sort_keys=False)
+
+print("Dataset Path Updated:")
+print(config["path"])
+
+# ==========================================================
+# Start Timer
 # ==========================================================
 
 start_datetime = datetime.now()
@@ -70,10 +128,19 @@ print("=" * 70)
 print(f"Training Started : {start_datetime}")
 print("=" * 70)
 
-model = YOLO("yolo12l.pt")
+# ==========================================================
+# Load Model
+# ==========================================================
+
+model = YOLO(MODEL_NAME)
+
+# ==========================================================
+# Train
+# ==========================================================
 
 results = model.train(
-    data=LOCAL_DATA_YAML,
+
+    data=DATA_YAML,
 
     epochs=100,
     patience=20,
@@ -83,6 +150,7 @@ results = model.train(
     workers=8,
 
     optimizer="AdamW",
+
     lr0=0.001,
     lrf=0.01,
     momentum=0.937,
@@ -119,6 +187,7 @@ results = model.train(
 
     amp=True,
     cache=True,
+
     deterministic=True,
     seed=42,
 
@@ -132,14 +201,18 @@ results = model.train(
 )
 
 # ==========================================================
-# Training Summary
+# End Timer
 # ==========================================================
 
 end_datetime = datetime.now()
 elapsed = time.time() - start_time
 
+hours = int(elapsed // 3600)
+minutes = int((elapsed % 3600) // 60)
+seconds = int(elapsed % 60)
+
 print("=" * 70)
-print(f"Started : {start_datetime}")
-print(f"Ended   : {end_datetime}")
-print(f"Duration: {elapsed/3600:.2f} Hours")
+print(f"Training Started : {start_datetime}")
+print(f"Training Ended   : {end_datetime}")
+print(f"Duration         : {hours} Hours {minutes} Minutes {seconds} Seconds")
 print("=" * 70)
