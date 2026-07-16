@@ -1,6 +1,13 @@
 dataset:
-  repo: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
-  folder: AerialDataset
+  repository: https://github.com/Ganapatiknaspl/train-yolo12l-model.git
+  local_folder: AerialDataset
   branch: master
+
+training:
+  model: yolo12l.pt
+  project: YOLO12_Training
+  run_name: Aircraft_v12l
+
 status:
-  cloned: true
+  cloned: false
+  last_updated: null
