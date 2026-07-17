@@ -1,0 +1,25 @@
+# ── Secrets / tokens (NEVER commit these) ──────────────────────────────────
+.env
+*.env
+
+# ── Local GitHub sync clone (temp, not needed in code repo) ────────────────
+runs_repo/
+
+# ── YOLO training outputs (auto-pushed to GitHub dataset repo instead) ──────
+YOLO12_Training/
+runs/
+
+# ── Dataset (auto-cloned, not needed in code repo) ──────────────────────────
+AerialDataset/
+
+# ── Python cache ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Logs ────────────────────────────────────────────────────────────────────
+logs/
+
+# ── Model weights (large files, version-controlled in dataset repo) ──────────
+*.pt
+!yolo12l.pt
